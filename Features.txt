@@ -1,0 +1,5 @@
+Features
+Face Recognition using DeepFace
+Attendance Tracking in Excel
+Redis for Caching and Real-Time Updates
+Temporary File Cleanup
