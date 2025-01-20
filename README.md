@@ -1,6 +1,5 @@
-# face-recognition-attendance-system
-A Python-based Face Recognition Attendance System using DeepFace for facial recognition, OpenCV for webcam capture, and Openpyxl for Excel logging. The GUI is built with Tkinter. It enables real-time face detection and automated attendance tracking.
-A Python-based Face Recognition Attendance System that uses DeepFace for facial recognition, OpenCV for webcam capture, and Openpyxl for logging attendance to an Excel sheet. The GUI is built with Tkinter, and Pygame provides sound feedback.
+Face Recognition Attendance System
+A Python-based Face Recognition Attendance System using DeepFace for facial recognition, OpenCV for webcam capture, and Openpyxl for logging attendance to an Excel sheet. The GUI is built with Tkinter, and Pygame provides sound feedback. It enables real-time face detection and automated attendance tracking.
 
 Features:
 Real-time Face Recognition: Automatically detects and matches faces with pre-stored reference images.
@@ -26,7 +25,7 @@ bash
 Copy
 Edit
 pip install deepface opencv-python openpyxl pygame
-Place your reference images in the Images folder. Make sure each image filename is the person's name (e.g., John_Doe.jpg).
+Place your reference images in the Images folder. Make sure each image filename matches the person’s name (e.g., John_Doe.jpg).
 
 Run the main.py file:
 
@@ -40,6 +39,6 @@ It processes the video frames, recognizes faces, and matches them with the refer
 When a match is found, attendance is logged with the current date and time in the attendance.xlsx file.
 A sound is played for feedback.
 Future Improvements:
-Performance optimization for faster face recognition with larger datasets.
-Real-time webcam integration for smoother attendance marking.
-Error handling and additional user features.
+Performance Optimization: Faster face recognition with larger datasets.
+Real-time Webcam Integration: Smoother attendance marking.
+Error Handling: Additional user features and better error management.
