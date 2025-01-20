@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition Attendance System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        video {
+            margin-top: 20px;
+            width: 640px;
+            height: 480px;
+        }
+        /* Button Styles */
+        button {
+            margin: 10px;
+            padding: 15px 30px;  /* Adjust padding for larger buttons */
+            font-size: 18px;      /* Increase font size */
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;  /* Rounded corners */
+            transition: all 0.3s ease;
+        }
+        /* Style for Mark Attendance button */
+        .mark-attendance-btn {
+            background-color: #4CAF50; /* Green */
+            color: white;
+        }
+        .mark-attendance-btn:hover {
+            background-color: #45a049; /* Darker green on hover */
+        }
+        /* Style for Exit button */
+        .exit-btn {
+            background-color: #f44336; /* Red */
+            color: white;
+        }
+        .exit-btn:hover {
+            background-color: #e53935; /* Darker red on hover */
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        #attendance-image {
+            margin-top: 20px;
+            max-width: 300px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Face Recognition Attendance System</h1>
+    <p>Click "Start Attendance" to capture your face and mark your attendance or "Exit" to leave the page.</p>
+    
+    <video id="video" autoplay></video>
+    <br>
+    <button class="mark-attendance-btn" onclick="captureAndMarkAttendance()">Start Attendance</button>
+    <button class="exit-btn" onclick="exitPage()">Exit</button>
+    
+    <div id="result"></div>
+    <img id="attendance-image" src="" alt="Captured Image" style="display:none;">
+
+    <script>
+        // Access webcam
+        const video = document.getElementById('video');
+        const constraints = { video: { facingMode: "user" } };
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((err) => {
+                console.log("Error accessing webcam: ", err);
+                document.getElementById('result').innerHTML = `<p style='color: red;'>Error accessing webcam: ${err.message}</p>`;
+            });
+
+        // Capture frame and send to backend
+        function captureAndMarkAttendance() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('image', blob, 'capture.png'); // Add image blob to FormData
+
+                fetch('/mark_attendance', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('result').innerHTML = `<p style='color: green;'>${data.message}</p>`;
+                        
+                        // Show the captured image
+                        const imageElement = document.getElementById('attendance-image');
+                        imageElement.src = 'data:image/png;base64,' + data.image;
+                        imageElement.style.display = 'block';  // Show the image
+                    } else {
+                        document.getElementById('result').innerHTML = `<p style='color: red;'>${data.message}</p>`;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = `<p style='color: red;'>Error: ${error}</p>`;
+                });
+            }, 'image/png');
+        }
+
+        // Exit button functionality
+        function exitPage() {
+            const confirmation = confirm("Are you sure you want to exit?");
+            if (confirmation) {
+                window.close(); // Will work if the tab was opened by JavaScript
+                window.location.href = "about:blank"; // Fallback for normal tabs
+            }
+        }
+    </script>
+</body>
+</html>
