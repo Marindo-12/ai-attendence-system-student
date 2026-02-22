@@ -1,0 +1,43 @@
+﻿{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Inscription</h2>
+  <form method="post" enctype="multipart/form-data" class="form-grid">
+    <label>Nom</label>
+    <input type="text" name="last_name" required>
+
+    <label>Prenom</label>
+    <input type="text" name="first_name" required>
+
+    <label>Email</label>
+    <input type="email" name="email" required>
+
+    <label>Password</label>
+    <input type="password" name="password" required>
+
+    <label>Role</label>
+    <select name="role" id="role" required>
+      <option value="student">Etudiant</option>
+      <option value="professor">Professeur</option>
+    </select>
+
+    <div id="images-wrap">
+      <label>Images (1 a 5)</label>
+      <input type="file" name="images" accept="image/*" multiple>
+      <p class="hint">Pour etudiant: upload entre 1 et 5 images.</p>
+    </div>
+
+    <button type="submit">Creer compte</button>
+  </form>
+</section>
+<script>
+const role = document.getElementById('role');
+const wrap = document.getElementById('images-wrap');
+function toggleImages() {
+  wrap.style.display = role.value === 'student' ? 'block' : 'none';
+}
+role.addEventListener('change', toggleImages);
+toggleImages();
+</script>
+{% endblock %}

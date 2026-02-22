@@ -1,44 +1,42 @@
-Face Recognition Attendance System
-A Python-based Face Recognition Attendance System using DeepFace for facial recognition, OpenCV for webcam capture, and Openpyxl for logging attendance to an Excel sheet. The GUI is built with Tkinter, and Pygame provides sound feedback. It enables real-time face detection and automated attendance tracking.
+﻿# Face Recognition Attendance System (Flask + SQLite)
 
-Features:
-Real-time Face Recognition: Automatically detects and matches faces with pre-stored reference images.
-Attendance Logging: Marks attendance and saves it to an Excel sheet.
-Sound Feedback: Plays a sound when attendance is successfully marked.
-User-Friendly GUI: Built using Tkinter for a simple and intuitive interface.
-Technologies Used:
-DeepFace for face recognition
-OpenCV for webcam capture and image processing
-Openpyxl for handling Excel files
-Tkinter for GUI
-Pygame for sound feedback
-Installation:
-Clone the repository:
+Application de presence avec reconnaissance faciale et 2 dashboards:
+- Dashboard Professeur: demarrer/arreter une seance, camera active, marquage presence.
+- Dashboard Etudiant: voir son statut (`present` / `absent`).
 
-bash
-Copy
-Edit
-git clone https://github.com/your-username/FaceRecognitionAttendance.git
-Install the required libraries:
+## Fonctionnalites ajoutees
+- Formulaire inscription: `nom`, `prenom`, `email`, `password`, `role`, `images (1 a 5 pour etudiant)`.
+- Base de donnees reelle SQLite: `attendance.db`.
+- Gestion des roles: `professor` et `student`.
+- Seances:
+  - Le professeur demarre la seance.
+  - Le systeme camera envoie des captures au backend.
+  - Si reconnu: statut `present` en base.
+  - A la fin de seance: les etudiants non reconnus deviennent `absent`.
 
-bash
-Copy
-Edit
-pip install deepface opencv-python openpyxl pygame
-Place your reference images in the Images folder. Make sure each image filename matches the person’s name (e.g., John_Doe.jpg).
+## Structure
+- `app.py`: backend Flask + DB + API reconnaissance.
+- `templates/`: pages login/register/prof/student.
+- `static/style.css`: style dashboards.
+- `Images/`: images de reference etudiants (utilisees par DeepFace).
+- `attendance.db`: base SQLite creee au premier lancement.
 
-Run the main.py file:
+## Installation
+```bash
+python -m venv venv
+venv\Scripts\activate
+pip install flask deepface opencv-python werkzeug
+```
 
-bash
-Copy
-Edit
-python main.py
-How It Works:
-The system captures video through your webcam.
-It processes the video frames, recognizes faces, and matches them with the reference images.
-When a match is found, attendance is logged with the current date and time in the attendance.xlsx file.
-A sound is played for feedback.
-Future Improvements:
-Performance Optimization: Faster face recognition with larger datasets.
-Real-time Webcam Integration: Smoother attendance marking.
-Error Handling: Additional user features and better error management.
+## Execution
+```bash
+python app.py
+```
+Puis ouvrir:
+- `http://127.0.0.1:5000/register` pour creer les comptes.
+- `http://127.0.0.1:5000/login` pour se connecter.
+
+## Notes importantes
+- En production, changer `SECRET_KEY` dans `app.py`.
+- La reconnaissance depend de la qualite/luminosite des images de reference.
+- Pour un etudiant, uploader entre 1 et 5 images au moment de l'inscription.

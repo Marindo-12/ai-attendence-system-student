@@ -1,0 +1,15 @@
+﻿{% extends "base.html" %}
+{% block title %}Dashboard Etudiant{% endblock %}
+{% block content %}
+<section class="card small">
+  <h2>Dashboard Etudiant</h2>
+  {% if record %}
+    <p><strong>Status:</strong> {{ record['status'] }}</p>
+    <p><strong>Marque le:</strong> {{ record['marked_at'] }}</p>
+    <p><strong>Debut seance:</strong> {{ record['start_time'] }}</p>
+    <p><strong>Fin seance:</strong> {{ record['end_time'] if record['end_time'] else 'Seance en cours' }}</p>
+  {% else %}
+    <p>Aucun statut disponible pour le moment.</p>
+  {% endif %}
+</section>
+{% endblock %}

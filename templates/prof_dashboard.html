@@ -1,0 +1,96 @@
+﻿{% extends "base.html" %}
+{% block title %}Dashboard Prof{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Dashboard Professeur</h2>
+  <div class="row">
+    <form method="post" action="{{ url_for('start_session') }}">
+      <button type="submit" {% if active_session_id %}disabled{% endif %}>Demarrer la seance</button>
+    </form>
+    <form method="post" action="{{ url_for('stop_session') }}">
+      <button type="submit" {% if not active_session_id %}disabled{% endif %}>Arreter la seance</button>
+    </form>
+  </div>
+
+  <p>Seance active: {{ active_session_id if active_session_id else 'Aucune' }}</p>
+
+  {% if active_session_id %}
+  <video id="video" autoplay playsinline></video>
+  <p id="camera-status" class="hint"></p>
+  {% endif %}
+
+  <h3>Presence</h3>
+  <table>
+    <thead>
+      <tr><th>Etudiant</th><th>Status</th><th>Date</th></tr>
+    </thead>
+    <tbody id="records-body">
+      {% for r in records %}
+      <tr>
+        <td>{{ r['first_name'] }} {{ r['last_name'] }}</td>
+        <td>{{ r['status'] }}</td>
+        <td>{{ r['marked_at'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if active_session_id %}
+<script>
+const video = document.getElementById('video');
+const statusEl = document.getElementById('camera-status');
+let captureTimer = null;
+
+async function setupCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+    statusEl.textContent = 'Camera activee';
+    captureTimer = setInterval(sendFrame, 3500);
+    setInterval(refreshRecords, 3000);
+  } catch (err) {
+    statusEl.textContent = `Erreur camera: ${err.message}`;
+  }
+}
+
+function sendFrame() {
+  if (!video.videoWidth || !video.videoHeight) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.toBlob(async (blob) => {
+    const fd = new FormData();
+    fd.append('image', blob, 'capture.jpg');
+    try {
+      const res = await fetch("{{ url_for('recognize_attendance') }}", { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.status === 'success' && data.student) {
+        statusEl.textContent = `${data.message}: ${data.student}`;
+      }
+    } catch (e) {
+      statusEl.textContent = `Erreur envoi: ${e.message}`;
+    }
+  }, 'image/jpeg', 0.8);
+}
+
+async function refreshRecords() {
+  try {
+    const res = await fetch("{{ url_for('api_prof_records') }}");
+    const rows = await res.json();
+    const body = document.getElementById('records-body');
+    body.innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.student}</td>
+        <td>${r.status}</td>
+        <td>${r.marked_at}</td>
+      </tr>
+    `).join('');
+  } catch (_) {}
+}
+
+setupCamera();
+</script>
+{% endif %}
+{% endblock %}
