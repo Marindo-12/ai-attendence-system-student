@@ -47,10 +47,10 @@ def save_to_excel(filename, row):
         traceback.print_exc()
 
 # Paths for Excel and reference images
-attendance_filename = r"C:\Users\admin\Desktop\FaceRecogAttendance\attendance.xlsx"
+attendance_filename = r"attendance.xlsx"
 initialize_excel(attendance_filename)
 
-reference_images_path = r"C:\Users\admin\Desktop\FaceRecogAttendance\Images"
+reference_images_path = r"Images"
 if not os.path.exists(reference_images_path):
     print(f"Error: The path {reference_images_path} does not exist.")
     exit()
