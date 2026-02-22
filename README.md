@@ -175,5 +175,40 @@ Informational warnings are common and often non-blocking if Flask server starts.
 - Add CSRF protection and stricter validation.
 - Add face embedding cache for better performance at scale.
 
+## Safe GitHub Push (Avoid Large File Errors)
+If you accidentally committed `venv/` or large binaries, use this protected workflow.
+
+### 1) Ensure ignored files are configured
+This project ignores:
+- `venv/`, `.venv/`, `env/`
+- `__pycache__/`
+- `attendance.db`, `attendance.xlsx`, `temp/`
+- `Images/*.pkl`
+
+### 2) Remove ignored files from Git tracking (keep files locally)
+```powershell
+git rm -r --cached --ignore-unmatch venv .venv env __pycache__ temp attendance.db attendance.xlsx
+git add .gitignore
+git commit -m "chore: stop tracking local env and runtime files"
+```
+
+### 3) If push still fails (because old commits still contain large files)
+Rewrite branch history into a clean single commit, then force push:
+
+```powershell
+git switch --orphan clean-main
+git add .
+git commit -m "Initial clean commit (without venv and large binaries)"
+git branch -M clean-main main
+git push -u origin main --force
+```
+
+This keeps your current project files and removes old heavy history from GitHub push.
+
+### 4) Normal push after cleanup
+```powershell
+git push
+```
+
 ## License
 Add your preferred license (`MIT`, `Apache-2.0`, etc.) in a `LICENSE` file.

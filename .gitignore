@@ -13,7 +13,9 @@ env/
 # Local databases and runtime artifacts
 attendance.db
 *.sqlite3
+attendance.xlsx
 temp/
+Images/*.pkl
 
 # IDE / OS
 .vscode/
