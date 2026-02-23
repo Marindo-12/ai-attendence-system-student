@@ -43,9 +43,44 @@ video { width: 100%; max-height: 360px; border-radius: 10px; border: 1px solid #
 .flash.success { background: #d1fae5; }
 .flash.error { background: #fee2e2; }
 .hint { color: #546274; font-size: 14px; }
+.capture-wrap {
+  border: 1px solid #d8e1ec;
+  border-radius: 10px;
+  padding: 12px;
+}
+.capture-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.capture-grid .pose-btn {
+  margin: 0;
+}
+.capture-status {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.capture-status li {
+  font-size: 14px;
+  color: #2a3f56;
+}
+.capture-preview {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+}
+.capture-preview img {
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #cfd6df;
+}
 table { width: 100%; border-collapse: collapse; }
 th, td { border-bottom: 1px solid #e2e8f0; padding: 8px; text-align: left; }
 @media (max-width: 640px) {
   .row { flex-direction: column; }
   .topbar { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .capture-grid { grid-template-columns: 1fr; }
 }

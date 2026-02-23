@@ -1,10 +1,12 @@
 ﻿from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
 from deepface import DeepFace
 import sqlite3
 import os
 import uuid
+import json
+import base64
+import binascii
 from datetime import datetime
 from functools import wraps
 
@@ -14,6 +16,7 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "Images")
 TEMP_DIR = os.path.join(BASE_DIR, "temp")
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+MIN_STUDENT_CAPTURES = 5
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "change-this-secret-in-production"
@@ -28,6 +31,23 @@ def get_db_connection():
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def save_base64_image(data_url, output_path):
+    if not data_url or "," not in data_url:
+        raise ValueError("Image invalide")
+
+    header, encoded = data_url.split(",", 1)
+    if not header.startswith("data:image/"):
+        raise ValueError("Format image invalide")
+
+    try:
+        image_bytes = base64.b64decode(encoded, validate=True)
+    except binascii.Error as exc:
+        raise ValueError("Image corrompue") from exc
+
+    with open(output_path, "wb") as image_file:
+        image_file.write(image_bytes)
 
 
 def login_required(role=None):
@@ -175,7 +195,7 @@ def register():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         role = request.form.get("role", "")
-        images = request.files.getlist("images")
+        captures_raw = request.form.get("captures_json", "[]")
 
         if not all([first_name, last_name, email, password, role]):
             flash("Tous les champs sont obligatoires", "error")
@@ -185,11 +205,24 @@ def register():
             flash("Role invalide", "error")
             return redirect(url_for("register"))
 
+        captures = []
         if role == "student":
-            valid_images = [img for img in images if img and img.filename]
-            if not (1 <= len(valid_images) <= 5):
-                flash("Un etudiant doit avoir entre 1 et 5 images", "error")
+            try:
+                captures = json.loads(captures_raw)
+            except json.JSONDecodeError:
+                flash("Donnees camera invalides", "error")
                 return redirect(url_for("register"))
+
+            if not isinstance(captures, list):
+                flash("Donnees camera invalides", "error")
+                return redirect(url_for("register"))
+            valid_captures = [
+                c for c in captures if isinstance(c, dict) and c.get("data")
+            ]
+            if len(valid_captures) < MIN_STUDENT_CAPTURES:
+                flash("Capturez au minimum 5 images", "error")
+                return redirect(url_for("register"))
+            captures = valid_captures
 
         conn = get_db_connection()
         existing = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
@@ -208,24 +241,33 @@ def register():
         user_id = cursor.lastrowid
 
         if role == "student":
-            for image in images:
-                if not image or not image.filename:
-                    continue
-                if not allowed_file(image.filename):
-                    conn.rollback()
-                    conn.close()
-                    flash("Format image non supporte", "error")
-                    return redirect(url_for("register"))
+            saved_paths = []
+            try:
+                for index, capture in enumerate(captures, start=1):
+                    if not isinstance(capture, dict):
+                        continue
 
-                ext = secure_filename(image.filename).rsplit(".", 1)[1].lower()
-                filename = f"{user_id}__{uuid.uuid4().hex}.{ext}"
-                save_path = os.path.join(UPLOAD_DIR, filename)
-                image.save(save_path)
+                    data_url = capture.get("data")
+                    if not data_url:
+                        continue
 
-                conn.execute(
-                    "INSERT INTO student_images (user_id, image_path) VALUES (?, ?)",
-                    (user_id, save_path),
-                )
+                    filename = f"{user_id}__cap{index}__{uuid.uuid4().hex}.jpg"
+                    save_path = os.path.join(UPLOAD_DIR, filename)
+                    save_base64_image(data_url, save_path)
+                    saved_paths.append(save_path)
+
+                    conn.execute(
+                        "INSERT INTO student_images (user_id, image_path) VALUES (?, ?)",
+                        (user_id, save_path),
+                    )
+            except ValueError:
+                conn.rollback()
+                conn.close()
+                for path in saved_paths:
+                    if os.path.exists(path):
+                        os.remove(path)
+                flash("Erreur lors de la sauvegarde des captures", "error")
+                return redirect(url_for("register"))
 
         conn.commit()
         conn.close()
@@ -459,3 +501,4 @@ init_db()
 
 if __name__ == "__main__":
     app.run(debug=True)
+

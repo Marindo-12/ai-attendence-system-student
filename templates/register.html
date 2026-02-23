@@ -1,9 +1,9 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Register{% endblock %}
 {% block content %}
 <section class="card">
   <h2>Inscription</h2>
-  <form method="post" enctype="multipart/form-data" class="form-grid">
+  <form method="post" class="form-grid" id="register-form">
     <label>Nom</label>
     <input type="text" name="last_name" required>
 
@@ -22,10 +22,16 @@
       <option value="professor">Professeur</option>
     </select>
 
-    <div id="images-wrap">
-      <label>Images (1 a 5)</label>
-      <input type="file" name="images" accept="image/*" multiple>
-      <p class="hint">Pour etudiant: upload entre 1 et 5 images.</p>
+    <div id="images-wrap" class="capture-wrap">
+      <label>Captures live (minimum 5)</label>
+      <video id="camera" autoplay playsinline muted></video>
+      <canvas id="camera-canvas" style="display:none;"></canvas>
+      <input type="hidden" name="captures_json" id="captures-json" value="[]">
+
+      <button type="button" id="capture-btn">Capture</button>
+      <p class="hint">Changez de position a chaque capture. Minimum 5 images.</p>
+      <p class="hint">Captures: <span id="capture-count">0</span>/5</p>
+      <div id="capture-preview" class="capture-preview"></div>
     </div>
 
     <button type="submit">Creer compte</button>
@@ -34,10 +40,80 @@
 <script>
 const role = document.getElementById('role');
 const wrap = document.getElementById('images-wrap');
-function toggleImages() {
-  wrap.style.display = role.value === 'student' ? 'block' : 'none';
+const form = document.getElementById('register-form');
+const camera = document.getElementById('camera');
+const canvas = document.getElementById('camera-canvas');
+const captureBtn = document.getElementById('capture-btn');
+const captureCount = document.getElementById('capture-count');
+const capturePreview = document.getElementById('capture-preview');
+const capturesJsonInput = document.getElementById('captures-json');
+
+const MIN_CAPTURES = 5;
+const captures = [];
+let stream = null;
+
+function updateCaptureUI() {
+  captureCount.textContent = String(captures.length);
+  capturesJsonInput.value = JSON.stringify(
+    captures.map((data) => ({ data }))
+  );
+
+  capturePreview.innerHTML = captures
+    .map((data, idx) => `<img src="${data}" alt="capture-${idx + 1}">`)
+    .join('');
 }
-role.addEventListener('change', toggleImages);
-toggleImages();
+
+async function startCamera() {
+  if (stream) return;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    camera.srcObject = stream;
+  } catch (err) {
+    capturePreview.innerHTML = `<p class="hint">Camera error: ${err.message}</p>`;
+  }
+}
+
+function stopCamera() {
+  if (!stream) return;
+  stream.getTracks().forEach((track) => track.stop());
+  stream = null;
+  camera.srcObject = null;
+}
+
+function captureImage() {
+  if (!camera.videoWidth || !camera.videoHeight) {
+    alert("Camera not ready yet");
+    return;
+  }
+  canvas.width = camera.videoWidth;
+  canvas.height = camera.videoHeight;
+  canvas.getContext('2d').drawImage(camera, 0, 0, canvas.width, canvas.height);
+  captures.push(canvas.toDataURL('image/jpeg', 0.9));
+  updateCaptureUI();
+}
+
+function toggleCaptureWrap() {
+  const isStudent = role.value === 'student';
+  wrap.style.display = isStudent ? 'block' : 'none';
+  if (isStudent) {
+    startCamera();
+  } else {
+    stopCamera();
+  }
+}
+
+captureBtn.addEventListener('click', captureImage);
+role.addEventListener('change', toggleCaptureWrap);
+
+form.addEventListener('submit', (event) => {
+  if (role.value !== 'student') return;
+  if (captures.length < MIN_CAPTURES) {
+    event.preventDefault();
+    alert(`Capturez au minimum ${MIN_CAPTURES} images`);
+  }
+});
+
+toggleCaptureWrap();
+updateCaptureUI();
 </script>
 {% endblock %}
